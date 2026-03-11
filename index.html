@@ -1,304 +1,41 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lofi Clock</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    html {
-      background: transparent;
-    }
-
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background: transparent;
-    }
-
-    .clock-wrapper {
-      position: relative;
-      width: 340px;
-      filter: drop-shadow(0 12px 28px rgba(0,0,0,0.28));
-    }
-
-    /* ── Pink body ── */
-    .clock-body {
-      background: linear-gradient(160deg, #f5a0b4 0%, #e8748a 45%, #d46078 100%);
-      border-radius: 26px 26px 20px 20px;
-      padding: 24px 26px 18px;
-      box-shadow:
-        0 6px 0 #b85070,
-        inset 0 1px 0 rgba(255,255,255,0.45),
-        inset 0 -2px 0 rgba(0,0,0,0.12);
-      position: relative;
-    }
-
-    /* ── Snooze button ── */
-    .snooze-btn {
-      position: absolute;
-      top: -16px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 46px;
-      height: 22px;
-      background: linear-gradient(180deg, #eae6de 0%, #d2cec6 100%);
-      border-radius: 7px 7px 0 0;
-      box-shadow:
-        0 -3px 8px rgba(0,0,0,0.18),
-        inset 0 1px 0 rgba(255,255,255,0.7);
-    }
-    .snooze-btn::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 20px;
-      height: 3px;
-      background: rgba(0,0,0,0.12);
-      border-radius: 2px;
-    }
-
-    /* ── Speaker dots (left side detail) ── */
-    .speaker-dots {
-      position: absolute;
-      right: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .dot {
-      width: 4px;
-      height: 4px;
-      background: rgba(0,0,0,0.18);
-      border-radius: 50%;
-    }
-
-    /* ── Gray bezel ── */
-    .display-bezel {
-      background: linear-gradient(180deg, #d8d4cc 0%, #c0bcb4 100%);
-      border-radius: 12px;
-      padding: 10px 12px 13px;
-      box-shadow:
-        inset 0 3px 10px rgba(0,0,0,0.38),
-        0 1px 0 rgba(255,255,255,0.35);
-    }
-
-    /* ── Dark LCD screen ── */
-    .display {
-      background: linear-gradient(150deg, #0e2030 0%, #091520 55%, #0b1d2c 100%);
-      border-radius: 7px;
-      padding: 10px 14px 12px;
-      display: flex;
-      align-items: center;
-      position: relative;
-      overflow: hidden;
-      min-height: 72px;
-    }
-
-    /* reflection */
-    .display::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 52%; bottom: 42%;
-      background: linear-gradient(135deg, rgba(255,255,255,0.07) 0%, transparent 100%);
-      border-radius: 7px 0 0 0;
-      pointer-events: none;
-      z-index: 2;
-    }
-
-    /* scanlines */
-    .display::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent 0px, transparent 3px,
-        rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px
-      );
-      pointer-events: none;
-      z-index: 1;
-    }
-
-    .display-inner {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      position: relative;
-      z-index: 3;
-      gap: 6px;
-    }
-
-    /* ── AM/PM ── */
-    .ampm-label {
-      font-family: 'VT323', monospace;
-      font-size: 15px;
-      color: #4dff9a;
-      text-shadow: 0 0 8px rgba(77,255,154,0.9), 0 0 18px rgba(77,255,154,0.4);
-      align-self: flex-end;
-      padding-bottom: 5px;
-      letter-spacing: 1px;
-      min-width: 22px;
-    }
-
-    /* ── Main HH:MM ── */
-    .main-time {
-      display: flex;
-      align-items: center;
-      flex: 1;
-    }
-
-    .time-segment {
-      font-family: 'VT323', monospace;
-      font-size: 62px;
-      color: #4dff9a;
-      text-shadow:
-        0 0 10px rgba(77,255,154,1),
-        0 0 22px rgba(77,255,154,0.6),
-        0 0 42px rgba(77,255,154,0.25);
-      letter-spacing: 4px;
-      line-height: 1;
-    }
-
-    /* blinking main colon */
-    .colon-main {
-      font-family: 'VT323', monospace;
-      font-size: 62px;
-      color: #4dff9a;
-      text-shadow:
-        0 0 10px rgba(77,255,154,1),
-        0 0 22px rgba(77,255,154,0.6);
-      line-height: 1;
-      padding: 0 2px;
-      animation: blink 1s step-end infinite;
-    }
-
-    /* ── Seconds (smaller, bottom-right of display) ── */
-    .seconds-block {
-      align-self: flex-end;
-      padding-bottom: 6px;
-      margin-left: 3px;
-      display: flex;
-      align-items: flex-end;
-      gap: 1px;
-    }
-
-    .colon-sec {
-      font-family: 'VT323', monospace;
-      font-size: 20px;
-      color: #4dff9a;
-      opacity: 0.65;
-      text-shadow: 0 0 6px rgba(77,255,154,0.7);
-      line-height: 1;
-      padding-bottom: 1px;
-      animation: blink 1s step-end infinite;
-    }
-
-    .seconds-digits {
-      font-family: 'VT323', monospace;
-      font-size: 24px;
-      color: #4dff9a;
-      text-shadow: 0 0 8px rgba(77,255,154,0.85), 0 0 16px rgba(77,255,154,0.35);
-      letter-spacing: 2px;
-      line-height: 1;
-      opacity: 0.75;
-    }
-
-    @keyframes blink {
-      0%, 49%  { opacity: 1;    }
-      50%, 100% { opacity: 0.12; }
-    }
-
-    /* ── Branding ── */
-    .brand-label {
-      text-align: center;
-      margin-top: 10px;
-      font-family: 'Arial Narrow', Arial, sans-serif;
-      font-size: 7.5px;
-      color: rgba(255,255,255,0.32);
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      user-select: none;
-    }
-
-    /* ── Feet ── */
-    .feet {
-      display: flex;
-      justify-content: space-between;
-      padding: 0 34px;
-    }
-    .foot {
-      width: 22px;
-      height: 9px;
-      background: linear-gradient(180deg, #b85070 0%, #a04060 100%);
-      border-radius: 0 0 7px 7px;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.22);
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Retro Anime Clock for Web | Gridfiti</title>
+    <meta name="description" content="An aesthetic retro anime clock to display the current time on Mac, Windows, and iPad!">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="shortcut icon" href="./favicon.ico">
+    <meta name="apple-mobile-web-app-title" content="Retro Anime Clock">
+    <meta name="application-name" content="Retro Anime Clock">
+    <meta name="msapplication-TileColor" content="#9f00a7">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="”apple-mobile-web-app-capable”" content="”yes”">
+    <script defer="defer" src="runtime.fec001af8c9925eeb87f.js"></script>
+    <script defer="defer" src="main.c02ade88822b5bc0a3de.js"></script>
 </head>
-<body>
-  <div class="clock-wrapper">
-    <div class="clock-body">
-      <div class="snooze-btn"></div>
-
-      <div class="display-bezel">
-        <div class="display">
-          <div class="display-inner">
-            <span class="ampm-label" id="ampm">PM</span>
-            <div class="main-time">
-              <span class="time-segment" id="hours">05</span>
-              <span class="colon-main">:</span>
-              <span class="time-segment" id="minutes">23</span>
-            </div>
-            <div class="seconds-block">
-              <span class="colon-sec">:</span>
-              <span class="seconds-digits" id="seconds">00</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="speaker-dots">
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-      </div>
+<body id="body" style="overflow:hidden;">
+    <div id="btnWrap">
+        <button class="clock-button">
+            <svg id="a" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+                <path d="M18.53,31.57v18.03H3.2V30.29c0-10.08,4.12-19.59,17.46-19.59h3.27c11.92,0,19.59,5.39,19.59,19.59v5.25c0,12.49-.57,17.18-9.37,30.52-2.84,4.4-6.96,9.94-10.22,14.48-9.51,13.63-10.08,17.32-10.08,21.72h30.38v15.05H.5v-7.95c0-13.77,2.13-20.72,12.35-38.47l9.23-16.32c4.54-7.95,4.54-10.93,4.54-16.18v-6.81c0-3.97-1.42-5.54-4.12-5.54-2.98,0-3.97,1.56-3.97,5.54Z"></path>
+                <path d="M38.76,78.55c5.96-15.76,18.74-51.81,23.71-67.28h13.91V77.27h9.79v14.48h-9.79v25.55h-15.76v-25.55h-21.86v-13.2Zm21.86-29.38c-2.84,9.23-6.1,18.6-9.65,28.11h9.65v-28.11Z"></path>
+                <path d="M88.75,11.69h15.19V49.59c2.7-4.54,6.81-9.08,12.63-9.08h.71c8.09,0,10.22,6.81,10.22,11.78V117.3h-15.33V60.1c0-3.55-.99-5.68-3.97-5.68-3.27,0-4.26,2.13-4.26,6.25v56.64h-15.19V11.69Z"></path>
+            </svg>
+        </button>
+        <button class="fs-button">
+            <svg id="a" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+                <path d="M43.42,11.89V.5H6.04C2.98,.59,.5,3.14,.5,6.19V43.42H11.89V11.89h31.53Z"></path>
+                <path d="M127.5,43.42V6.19c0-3.14-2.55-5.69-5.69-5.69h-37.23V11.89h31.53v31.53h11.39Z"></path>
+                <path d="M6.19,127.5H43.42v-11.39H11.89v-31.53H.5v37.4c.08,3.03,2.63,5.52,5.69,5.52Z"></path>
+                <path d="M84.58,116.11v11.39h37.23c3.14,0,5.69-2.55,5.69-5.69v-37.23h-11.39v31.53h-31.53Z"></path>
+            </svg>
+        </button>
     </div>
-    <div class="feet">
-      <div class="foot"></div>
-      <div class="foot"></div>
-    </div>
-  </div>
-
-  <script>
-    function pad(n) { return String(n).padStart(2, '0'); }
-
-    function tick() {
-      const now   = new Date();
-      let   h     = now.getHours();
-      const m     = now.getMinutes();
-      const s     = now.getSeconds();
-      const ampm  = h >= 12 ? 'PM' : 'AM';
-      h = h % 12 || 12;
-
-      document.getElementById('hours').textContent   = pad(h);
-      document.getElementById('minutes').textContent = pad(m);
-      document.getElementById('seconds').textContent = pad(s);
-      document.getElementById('ampm').textContent    = ampm;
-    }
-
-    tick();
-    setInterval(tick, 1000);
-  </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"d7b2fe6b733f4c179d815b0bc07ada58","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
