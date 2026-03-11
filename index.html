@@ -1,120 +1,300 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Lofi Clock</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lofi Clock</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-<!-- Tailwind CDN -->
-<script src="https://cdn.tailwindcss.com"></script>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: transparent;
+    }
 
-<!-- React + ReactDOM -->
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
-<!-- Babel for JSX -->
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    .clock-wrapper {
+      position: relative;
+      width: 340px;
+      filter: drop-shadow(0 12px 28px rgba(0,0,0,0.28));
+    }
 
-<style>
-@keyframes blink {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0.3; }
-}
-</style>
+    /* ── Pink body ── */
+    .clock-body {
+      background: linear-gradient(160deg, #f5a0b4 0%, #e8748a 45%, #d46078 100%);
+      border-radius: 26px 26px 20px 20px;
+      padding: 24px 26px 18px;
+      box-shadow:
+        0 6px 0 #b85070,
+        inset 0 1px 0 rgba(255,255,255,0.45),
+        inset 0 -2px 0 rgba(0,0,0,0.12);
+      position: relative;
+    }
+
+    /* ── Snooze button ── */
+    .snooze-btn {
+      position: absolute;
+      top: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 46px;
+      height: 22px;
+      background: linear-gradient(180deg, #eae6de 0%, #d2cec6 100%);
+      border-radius: 7px 7px 0 0;
+      box-shadow:
+        0 -3px 8px rgba(0,0,0,0.18),
+        inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+    .snooze-btn::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 3px;
+      background: rgba(0,0,0,0.12);
+      border-radius: 2px;
+    }
+
+    /* ── Speaker dots (left side detail) ── */
+    .speaker-dots {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .dot {
+      width: 4px;
+      height: 4px;
+      background: rgba(0,0,0,0.18);
+      border-radius: 50%;
+    }
+
+    /* ── Gray bezel ── */
+    .display-bezel {
+      background: linear-gradient(180deg, #d8d4cc 0%, #c0bcb4 100%);
+      border-radius: 12px;
+      padding: 10px 12px 13px;
+      box-shadow:
+        inset 0 3px 10px rgba(0,0,0,0.38),
+        0 1px 0 rgba(255,255,255,0.35);
+    }
+
+    /* ── Dark LCD screen ── */
+    .display {
+      background: linear-gradient(150deg, #0e2030 0%, #091520 55%, #0b1d2c 100%);
+      border-radius: 7px;
+      padding: 10px 14px 12px;
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      min-height: 72px;
+    }
+
+    /* reflection */
+    .display::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 52%; bottom: 42%;
+      background: linear-gradient(135deg, rgba(255,255,255,0.07) 0%, transparent 100%);
+      border-radius: 7px 0 0 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* scanlines */
+    .display::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0px, transparent 3px,
+        rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .display-inner {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      position: relative;
+      z-index: 3;
+      gap: 6px;
+    }
+
+    /* ── AM/PM ── */
+    .ampm-label {
+      font-family: 'VT323', monospace;
+      font-size: 15px;
+      color: #4dff9a;
+      text-shadow: 0 0 8px rgba(77,255,154,0.9), 0 0 18px rgba(77,255,154,0.4);
+      align-self: flex-end;
+      padding-bottom: 5px;
+      letter-spacing: 1px;
+      min-width: 22px;
+    }
+
+    /* ── Main HH:MM ── */
+    .main-time {
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
+
+    .time-segment {
+      font-family: 'VT323', monospace;
+      font-size: 62px;
+      color: #4dff9a;
+      text-shadow:
+        0 0 10px rgba(77,255,154,1),
+        0 0 22px rgba(77,255,154,0.6),
+        0 0 42px rgba(77,255,154,0.25);
+      letter-spacing: 4px;
+      line-height: 1;
+    }
+
+    /* blinking main colon */
+    .colon-main {
+      font-family: 'VT323', monospace;
+      font-size: 62px;
+      color: #4dff9a;
+      text-shadow:
+        0 0 10px rgba(77,255,154,1),
+        0 0 22px rgba(77,255,154,0.6);
+      line-height: 1;
+      padding: 0 2px;
+      animation: blink 1s step-end infinite;
+    }
+
+    /* ── Seconds (smaller, bottom-right of display) ── */
+    .seconds-block {
+      align-self: flex-end;
+      padding-bottom: 6px;
+      margin-left: 3px;
+      display: flex;
+      align-items: flex-end;
+      gap: 1px;
+    }
+
+    .colon-sec {
+      font-family: 'VT323', monospace;
+      font-size: 20px;
+      color: #4dff9a;
+      opacity: 0.65;
+      text-shadow: 0 0 6px rgba(77,255,154,0.7);
+      line-height: 1;
+      padding-bottom: 1px;
+      animation: blink 1s step-end infinite;
+    }
+
+    .seconds-digits {
+      font-family: 'VT323', monospace;
+      font-size: 24px;
+      color: #4dff9a;
+      text-shadow: 0 0 8px rgba(77,255,154,0.85), 0 0 16px rgba(77,255,154,0.35);
+      letter-spacing: 2px;
+      line-height: 1;
+      opacity: 0.75;
+    }
+
+    @keyframes blink {
+      0%, 49%  { opacity: 1;    }
+      50%, 100% { opacity: 0.12; }
+    }
+
+    /* ── Branding ── */
+    .brand-label {
+      text-align: center;
+      margin-top: 10px;
+      font-family: 'Arial Narrow', Arial, sans-serif;
+      font-size: 7.5px;
+      color: rgba(255,255,255,0.32);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      user-select: none;
+    }
+
+    /* ── Feet ── */
+    .feet {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 34px;
+    }
+    .foot {
+      width: 22px;
+      height: 9px;
+      background: linear-gradient(180deg, #b85070 0%, #a04060 100%);
+      border-radius: 0 0 7px 7px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.22);
+    }
+  </style>
 </head>
+<body>
+  <div class="clock-wrapper">
+    <div class="clock-body">
+      <div class="snooze-btn"></div>
 
-<body class="min-h-screen flex items-center justify-center bg-transparent">
-<div id="root"></div>
-
-<script type="text/babel">
-
-function LofiClock() {
-  const [time, setTime] = React.useState(new Date());
-
-  React.useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const hours = time.getHours();
-  const minutes = time.getMinutes();
-  const seconds = time.getSeconds();
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  const displayHours = hours % 12 || 12;
-
-  return (
-    <div className="relative">
-      <div className="absolute inset-0 bg-gray-400 opacity-20 blur-xl transform translate-y-4"></div>
-
-      <div className="relative bg-gradient-to-br from-pink-200 to-pink-300 rounded-2xl"
-           style={{ width: '420px', height: '140px' }}>
-        <div className="absolute inset-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl border-4 border-white shadow-inner">
-          <div className="absolute inset-3 bg-gradient-to-br from-slate-700 to-slate-800 rounded-lg overflow-hidden">
-            <div className="absolute inset-0 opacity-5"
-                 style={{ background: 'transparent' }}>
+      <div class="display-bezel">
+        <div class="display">
+          <div class="display-inner">
+            <span class="ampm-label" id="ampm">PM</span>
+            <div class="main-time">
+              <span class="time-segment" id="hours">05</span>
+              <span class="colon-main">:</span>
+              <span class="time-segment" id="minutes">23</span>
             </div>
-
-            <div className="absolute inset-0 bg-gradient-to-br from-white opacity-10"></div>
-
-            <div className="relative h-full flex items-center justify-center px-6">
-              <div className="flex items-center gap-4">
-                <div className="text-emerald-400 font-mono text-xl opacity-90 mr-2">
-                  {ampm}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-emerald-400 font-mono tracking-wider"
-                        style={{
-                          fontSize: '72px',
-                          textShadow: '0 0 20px rgba(52, 211, 153, 0.5), 0 0 2px rgba(52, 211, 153, 0.8)',
-                          fontWeight: '300',
-                          letterSpacing: '0.05em'
-                        }}>
-                    {String(displayHours).padStart(2, '0')}
-                  </span>
-
-                  <span className="text-emerald-400 font-mono"
-                        style={{
-                          fontSize: '72px',
-                          textShadow: '0 0 20px rgba(52, 211, 153, 0.5)',
-                          fontWeight: '300',
-                          animation: 'blink 1s infinite'
-                        }}>
-                    :
-                  </span>
-
-                  <span className="text-emerald-400 font-mono tracking-wider"
-                        style={{
-                          fontSize: '72px',
-                          textShadow: '0 0 20px rgba(52, 211, 153, 0.5), 0 0 2px rgba(52, 211, 153, 0.8)',
-                          fontWeight: '300',
-                          letterSpacing: '0.05em'
-                        }}>
-                    {String(minutes).padStart(2, '0')}
-                  </span>
-                </div>
-
-                <div className="text-emerald-400 font-mono text-2xl opacity-75 ml-2">
-                  {String(seconds).padStart(2, '0')}
-                </div>
-              </div>
+            <div class="seconds-block">
+              <span class="colon-sec">:</span>
+              <span class="seconds-digits" id="seconds">00</span>
             </div>
-
           </div>
         </div>
-
-        
       </div>
 
-      
-      
+      <div class="speaker-dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
     </div>
-  );
-}
+    <div class="feet">
+      <div class="foot"></div>
+      <div class="foot"></div>
+    </div>
+  </div>
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<LofiClock />);
+  <script>
+    function pad(n) { return String(n).padStart(2, '0'); }
 
-</script>
+    function tick() {
+      const now   = new Date();
+      let   h     = now.getHours();
+      const m     = now.getMinutes();
+      const s     = now.getSeconds();
+      const ampm  = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+
+      document.getElementById('hours').textContent   = pad(h);
+      document.getElementById('minutes').textContent = pad(m);
+      document.getElementById('seconds').textContent = pad(s);
+      document.getElementById('ampm').textContent    = ampm;
+    }
+
+    tick();
+    setInterval(tick, 1000);
+  </script>
 </body>
 </html>
